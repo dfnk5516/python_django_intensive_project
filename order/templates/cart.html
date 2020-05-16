@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block contents %}
+<div class="row mt-5">
+  <div class="col-12">
+    <table class="table table-light">
+      <thead class="thead-light">
+        <tr>
+          <th scope="col">#</th>
+          <th scope="col">상품명</th>
+          <th scope="col">수량</th>
+        </tr>
+      </thead>
+      <tbody class="text-dark">
+        <tr>
+        <tr scope="row"></tr>
+        <tr></tr>
+        <tr></tr>
+        <!-- <th><a id="product-{{product.id}}" onmouseenter="product_detail({{product.id}})"
+              onmouseleave="product_leave({{product.id}})" href="/product/{{product.id}}">{{product.name}}</a></th>
+          <th>{{product.price|intcomma}} 원</th>  -->
+        <!-- intcomma > humanize 활성화하고(settings파일도) 필터 등록-->
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+<script>
+  (function () {
+    document.querySelector('#cart').classList.add('active')
+  })()
+
+  let cart = getCookie('cart');
+  const tbody = document.querySelector('.text-dark');
+  if (cart != undefined && cart != null) {
+    cart = JSON.parse(cart);
+    console.log(Object.keys(cart).length);
+    let index = 1;
+    for (let key in cart) {
+      let value = cart[key];
+      let tr = document.createElement('tr');
+      let td = document.createElement('td');
+      // td.setAttribute('scope') = 'row';
+      td.innerHTML = index++;
+      tr.appendChild(td);
+      td = document.createElement('td');
+      td.innerHTML = key;
+      tr.appendChild(td);
+      td = document.createElement('td');
+      td.innerHTML = value;
+      tr.appendChild(td);
+      tbody.appendChild(tr);
+    }
+  }
+
+
+  function getCookie(cookie_name) {
+    var x, y;
+    var val = document.cookie.split(';');
+
+    for (var i = 0; i < val.length; i++) {
+      x = val[i].substr(0, val[i].indexOf('='));
+      y = val[i].substr(val[i].indexOf('=') + 1);
+      x = x.replace(/^\s+|\s+$/g, ''); // 앞과 뒤의 공백 제거하기
+      if (x == cookie_name) {
+        return unescape(y); // unescape로 디코딩 후 값 리턴
+      }
+    }
+  }
+</script>
+{% endblock %}

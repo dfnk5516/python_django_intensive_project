@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block contents %}
+<div class="row mt-5">
+  <div class="col-12">
+    <div class="card" style="width:100%;">
+      <div class="card-body">
+        <h5 class="card-title">{{product.name}}</h5>
+      </div>
+      <ul class="list-group list-group-flush">
+        <li class="list-group-item">
+          <form action="#" onSubmit="return addCart()">
+            {% if request.session.user %}
+            {% for field in form %}
+            <div class="form-group">
+              {% ifnotequal field.name 'product' %}
+              <label for="{{field.id_for_label}}">{{field.label}}</label>
+              {% endifnotequal %}
+              <input type="{{field.field.widget.input_type}}" class="form-control" id="{{field.id_for_label}}"
+                placeholder="{{field.label}}" name="{{field.name}}"
+                value="{% ifequal field.name 'product' %}{{product.id}}{% endifequal %}">
+            </div>
+            {% if field.errors %}
+            <span style="color:red">{{field.errors}}</span>
+            {% endif %}
+            {% endfor %}
+            <button id="cart-button" type="submit" class="btn btn-primary">장바구니 담기</button>
+            {% endif %}
+          </form>
+        </li>
+        <li class="list-group-item">가격 :{{product.price|intcomma}}</li>
+        <li class="list-group-item">등록날짜 :{{product.register_date|date:'Y-m-d H:i'}}</li>
+        <li class="list-group-item">재고 :{{product.stock|intcomma}} 개</li>
+        <li class="list-group-item">설명 :{{product.description|safe}}</li><!-- safn > html로 파싱 -->
+      </ul>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-12"><a href="/product/">목록보기</a></div>
+  </div>
+</div>
+<script>
+  (function () {
+    document.querySelector('#product').classList.add('active')
+  })()
+  const cartButton = document.querySelector('#cart-button');
+  const quantity = document.querySelector('#id_quantity');
+  const product = '{{product|safe}}';
+
+  // document.addEventListener('click', addCart);
+
+  function addCart() {
+    let cart = getCookie('cart');
+    console.log(cart)
+    if (cart == undefined || cart == null) {
+      setCookie('cart', JSON.stringify({product : quantity.value.toString()}), 3)
+    }
+    else{
+      cart = JSON.parse(cart);
+      cart.{{product|safe}} = quantity.value.toString();
+      setCookie('cart', JSON.stringify(cart), 3)
+      console.log(cart);
+    }
+
+    return false;
+  }
+
+  function getCookie(cookie_name) {
+    var x, y;
+    var val = document.cookie.split(';');
+
+    for (var i = 0; i < val.length; i++) {
+      x = val[i].substr(0, val[i].indexOf('='));
+      y = val[i].substr(val[i].indexOf('=') + 1);
+      x = x.replace(/^\s+|\s+$/g, ''); // 앞과 뒤의 공백 제거하기
+      if (x == cookie_name) {
+        return unescape(y); // unescape로 디코딩 후 값 리턴
+      }
+    }
+  }
+
+  function setCookie(cookie_name, value, days) {
+    var exdate = new Date();
+    exdate.setDate(exdate.getDate() + days);
+    var cookie_value = escape(value) + ((days == null) ? '' : ';    expires=' + exdate.toUTCString()) + ';path=/;';
+    document.cookie = cookie_name + '=' + cookie_value;
+  }
+</script>
+
+{% endblock %}

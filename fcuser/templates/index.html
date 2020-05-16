@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block header %}
+<style>
+  body{
+    background : gray;
+  }
+  section {
+    width : 100%;
+    height: calc(100vh - 80px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+</style>
+{% endblock %}
+{% block contents %}
+<section>
+  {%if request.session.user%}
+  <h1 style="font-weight : blod; font-size:50px; color : white;">
+    Hello
+    {{ email }}!
+  </h1>
+  {% else %}
+  <h1 style="font-weight : blod; font-size:50px; color : white;">
+   Hello!
+  </h1>
+  {% endif %}
+</section>
+{% endblock %}
