@@ -20,7 +20,7 @@ from product.views import (
   ProductList, ProductCreate, ProductDetail,
   ProductListAPI, ProductDetailAPI
 )
-from order.views import OrderCreate, OrderList, cart
+from order.views import OrderList, cart, OrderDetail, orderCreate
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -32,6 +32,9 @@ urlpatterns = [
     path('product/<int:pk>/', ProductDetail.as_view()),
     path('product/create/', ProductCreate.as_view()),
     path('order/', OrderList.as_view()),
+    # path('order/<int:pk>/', OrderDetail.as_view()),
+    path('order/<int:pk>/', OrderDetail),
+    path('order/create/', orderCreate),
     path('cart/', cart),
     # path('order/create/', OrderCreate.as_view()),
 

@@ -9,7 +9,7 @@
       </div>
       <ul class="list-group list-group-flush">
         <li class="list-group-item">
-          <form action="#" onSubmit="return addCart()">
+          <form action="/cart/" onSubmit="return addCart()">
             {% if request.session.user %}
             {% for field in form %}
             <div class="form-group">
@@ -50,19 +50,18 @@
   // document.addEventListener('click', addCart);
 
   function addCart() {
+    if(isNaN(quantity.value)){alert('숫자만 입력하시오'); quantity.value=''; return false;}
     let cart = getCookie('cart');
     console.log(cart)
     if (cart == undefined || cart == null) {
-      setCookie('cart', JSON.stringify({product : quantity.value.toString()}), 3)
+      setCookie('cart', JSON.stringify({'{{product|safe}}' : quantity.value.toString()}), 3)
     }
     else{
       cart = JSON.parse(cart);
       cart.{{product|safe}} = quantity.value.toString();
       setCookie('cart', JSON.stringify(cart), 3)
-      console.log(cart);
     }
-
-    return false;
+    return true;
   }
 
   function getCookie(cookie_name) {

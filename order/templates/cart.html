@@ -2,57 +2,144 @@
 {% load humanize %}
 {% block contents %}
 <div class="row mt-5">
+  <div class="col-12" style="color:red;">
+      {{error}}
+  </div>
+</div>
+<div class="row">
   <div class="col-12">
     <table class="table table-light">
       <thead class="thead-light">
         <tr>
           <th scope="col">#</th>
           <th scope="col">상품명</th>
-          <th scope="col">수량</th>
+          <th scope="col">주문수량</th>
+          <th scope="col">주문수량 수정값</th>
+          <th scope="col">수정</th>
+          <th scope="col">삭제</th>
         </tr>
       </thead>
       <tbody class="text-dark">
-        <tr>
-        <tr scope="row"></tr>
-        <tr></tr>
-        <tr></tr>
-        <!-- <th><a id="product-{{product.id}}" onmouseenter="product_detail({{product.id}})"
-              onmouseleave="product_leave({{product.id}})" href="/product/{{product.id}}">{{product.name}}</a></th>
-          <th>{{product.price|intcomma}} 원</th>  -->
-        <!-- intcomma > humanize 활성화하고(settings파일도) 필터 등록-->
-        </tr>
       </tbody>
     </table>
+    <button class="btn btn-primary" onclick="createOrder()">주문하기</button>
   </div>
 </div>
 <script>
-  (function () {
-    document.querySelector('#cart').classList.add('active')
-  })()
-
   let cart = getCookie('cart');
   const tbody = document.querySelector('.text-dark');
-  if (cart != undefined && cart != null) {
-    cart = JSON.parse(cart);
-    console.log(Object.keys(cart).length);
-    let index = 1;
-    for (let key in cart) {
-      let value = cart[key];
-      let tr = document.createElement('tr');
-      let td = document.createElement('td');
-      // td.setAttribute('scope') = 'row';
-      td.innerHTML = index++;
-      tr.appendChild(td);
-      td = document.createElement('td');
-      td.innerHTML = key;
-      tr.appendChild(td);
-      td = document.createElement('td');
-      td.innerHTML = value;
-      tr.appendChild(td);
-      tbody.appendChild(tr);
+
+  (function () {
+    document.querySelector('#cart').classList.add('active')
+
+    if (cart != undefined && cart != null) {
+      cart = JSON.parse(cart);
+      let index = 1;
+      for (let key in cart) {
+        let value = cart[key];
+        let tr = document.createElement('tr');
+        let td = document.createElement('td');
+        td.innerHTML = index++; // index
+        tr.appendChild(td);
+        td = document.createElement('td');
+        td.innerHTML = key;
+        tr.appendChild(td); // product
+        td = document.createElement('td');
+        td.innerHTML = value;
+        tr.appendChild(td); // quantity
+        td = document.createElement('td');
+        let input = document.createElement('input');
+        console.log(key);
+        input.setAttribute('id', key);
+        input.setAttribute('type', 'text');
+        input.classList.add('form-control');
+        input.value = value;
+        td.appendChild(input);
+        tr.appendChild(td); // quantity
+        td = document.createElement('td');
+        input = document.createElement('input');
+        input.setAttribute('type', 'button');
+        input.classList.add('btn');
+        input.classList.add('btn-success');
+        input.value = '수정';
+        input.onclick = () => editQuantity(key);
+        td.appendChild(input);
+        tr.appendChild(td); // editBtn
+        td = document.createElement('td');
+        input = document.createElement('input');
+        input.setAttribute('type', 'button');
+        input.classList.add('btn');
+        input.classList.add('btn-danger');
+        input.value = '삭제';
+        input.onclick = () => deleteItem(key);
+        td.appendChild(input);
+        tr.appendChild(td); // deleteBtn
+        tbody.appendChild(tr);
+      }
+    }
+  })()
+
+  function editQuantity(item) {
+    cart = getCookie('cart');
+    if (cart != undefined && cart != null) {
+      const obj = document.querySelector('#' + item);
+      if (isNaN(obj.value)) {alert('숫자만 입력하시오'); return}
+      cart = JSON.parse(cart);
+      cart[item] = obj.value;
+      setCookie('cart', JSON.stringify(cart), 3)
+      location.href = '.';
     }
   }
 
+  function deleteItem(item) {
+    cart = getCookie('cart');
+    if (cart != undefined && cart != null) {
+      const obj = document.querySelector('#' + item);
+      cart = JSON.parse(cart);
+      delete cart[item];
+      setCookie('cart', JSON.stringify(cart), 3)
+      location.href = '.';
+    }
+  }
+
+  function createOrder() {
+    const form = document.createElement('form');
+    form.action = '/order/create/';
+    form.method = 'POST';
+    form.innerHTML = '{% csrf_token %}';
+
+    cart = getCookie('cart');
+    if (cart != undefined && cart != null) {
+      cart = JSON.parse(cart);
+
+      let temp ='';
+      for (let key in cart) {
+        let value = cart[key];
+        let product = document.createElement('input');
+        product.name = key;
+        temp += key + '%&key%&';
+        product.type = 'hidden';
+        product.value = value;
+        form.appendChild(product);
+      }
+      let orderProductList = document.createElement('input');
+      orderProductList.name= 'orderProductList'
+      orderProductList.type= 'hidden'
+      orderProductList.value = temp;
+      form.appendChild(orderProductList);
+      // setCookie('cart', '', 0)
+      document.querySelector('body').appendChild(form);
+      form.submit();
+    }
+
+  }
+
+  function setCookie(cookie_name, value, days) {
+    var exdate = new Date();
+    exdate.setDate(exdate.getDate() + days);
+    var cookie_value = escape(value) + ((days == null) ? '' : ';    expires=' + exdate.toUTCString()) + ';path=/;';
+    document.cookie = cookie_name + '=' + cookie_value;
+  }
 
   function getCookie(cookie_name) {
     var x, y;

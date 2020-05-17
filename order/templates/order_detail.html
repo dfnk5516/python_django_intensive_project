@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block contents %}
+<div class="row mt-5">
+  <div class="col-12">
+    <h4>주문번호 : {{order_items.0.order.ordernum}}</h4>
+    <h4>주문자 : {{order_items.0.order.fcuser}}</h4>
+    <table class="table table-light mt-4">
+      <thead class="thead-light">
+        <tr>
+          <th scope="col">상품명</th>
+          <th scope="col">수량</th>
+        </tr>
+      </thead>
+      <tbody class="text-dark">
+        {% for order_item in order_items %}
+        <tr>
+          <th>{{order_item.product}}</th>
+          <th>{{order_item.quantity|intcomma}} 개</th>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <button class="btn btn-primary" onclick="location.href='/order/'">돌아가기</button>
+  </div>
+</div>
+<script>
+  (function () {
+    document.querySelector('#orderList').classList.add('active')
+  })()
+</script>
+{% endblock %}

@@ -5,11 +5,14 @@ from django.utils.decorators import method_decorator
 from fcuser.decorators import login_required
 from django.db import transaction
 from .forms import Registerform
-from .models import Order
+from order.models import Order
+from orderitem.models import OrderItem
 from product.models import Product
 from fcuser.models import Fcuser
+from http import cookies
 # Create your views here.
 
+'''
 @method_decorator(login_required, name='dispatch')
 class OrderCreate(FormView):
   form_class = Registerform
@@ -40,6 +43,7 @@ class OrderCreate(FormView):
       'request' : self.request
     })
     return kw
+'''
 
 @method_decorator(login_required, name='dispatch')
 class OrderList(ListView):
@@ -48,8 +52,29 @@ class OrderList(ListView):
   context_object_name = 'order_list' # attribute name 설정 > 안할시 object_list
 
   def get_queryset(self, **kwargs):
-    queryset = Order.objects.filter(fcuser__email=self.request.session.get('user'))
+    queryset = Order.objects.all()
+    print(queryset)
+    # queryset = Order.objects.filter(fcuser__email=self.request.session.get('user'))
     return queryset
+
+# @method_decorator(login_required, name='dispatch')
+# class OrderDetail(ListView):
+#   # model = Order # 자신이 주문한것만 보이게 하기위해 filter 적용(하단의 get_queryset > session 접근하기위해 사용하는 함수)
+#   template_name = 'order_detail.html'
+#   context_object_name = 'order_items' # attribute name 설정 > 안할시 object_list
+
+#   def get_queryset(self, **kwargs):
+#     r2 = Order.objects.get(ordernum=24)
+#     queryset = r2.orderitem_set.all()
+#     print(queryset)
+#     return queryset
+
+def OrderDetail(request, pk):
+  if request.method == 'GET':
+    r2 = Order.objects.get(ordernum=pk)
+    queryset = r2.orderitem_set.all()
+    print(queryset)
+    return render(request, 'order_detail.html', {'order_items' : queryset})
 
 
 
@@ -58,3 +83,37 @@ def cart(request):
     if not request.session.get('user'):
       return redirect('/login')
     return render(request, 'cart.html')
+
+def orderCreate(request):
+  if request.method == 'POST':
+    orderProductList = request.POST.get('orderProductList', None)
+    if orderProductList:
+      result = orderProductList.split('%&key%&')[:-1]
+      check = True
+
+      for v in result:
+        prod = Product.objects.get(name=v)
+        quantity = request.POST.get(v,0)
+        if (prod.stock <= int(quantity)):
+          check = False
+      
+      if check == True:
+        order = Order(
+          fcuser = Fcuser.objects.get(email=request.session.get('user'))
+        )
+        order.save()
+        for v in result:
+          prod = Product.objects.get(name=v)
+          quantity = request.POST.get(v,0)
+          
+          orderitem = OrderItem(
+            order = order,
+            product = prod,
+            quantity = quantity
+          )
+          orderitem.save()
+          prod.stock -= int(quantity)
+          prod.save()
+
+    return redirect('/')
+
