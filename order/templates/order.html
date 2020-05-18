@@ -1,36 +1,448 @@
 {% extends "base.html" %}
 {% load humanize %}
+{% block header%}
+<script>
+  const orderArr = new Array();
+  let order;
+  let ordering = '{{ordering}}'
+  let filteredArr;
+
+  let listCount = parseInt(10); // 한 페이지에 몇 개의 게시글
+  let pageCount = parseInt(10); // 한번에 몇 페이지까지
+  let page = parseInt(1); // 현재 페이지
+  let totalCount; // 총 게시글 수
+  let totalPage; // 총 페이지 수
+  let startPage; // 1 11 21 31...
+  let endPage; // 10 20 30 40...
+  let firstRownum = 1;
+  let lastRownum = 5;
+</script>
+<style>
+  .tbody tr:hover {
+    background: #263238;
+    color: white;
+  }
+
+  .thead-light tr th:hover {
+    cursor: pointer;
+    background: #263238;
+    color: white;
+  }
+  .tableCell
+  {
+    display : table-cell;
+    text-align : center;
+    vertical-align : middle;
+  }
+  .clickAble:hover,
+  .selectAble:hover
+  {
+    cursor : pointer;
+    background: #263238;
+    color: white;
+  }
+
+  .h-container:after
+  {
+    clear: both;
+    display: block;
+    content: ''
+  }
+  .h-container .item
+  {
+    float: left;
+    text-align: center;
+    overflow : hidden;
+  }
+
+</style>
+{% endblock %}
 {% block contents %}
 <div class="row mt-5">
   <div class="col-12">
     <table class="table table-light">
       <thead class="thead-light">
         <tr>
-          <th scope="col">주문번호</th>
-          <th scope="col">주문자</th>
-          <!-- <th scope="col">상품명</th>
-          <th scope="col">수량</th> -->
-          <th scope="col">주문날짜</th>
+          <th scope='col'>활성</th>
+          <th>필터</th>
+          <th>필터 조건</th>
         </tr>
       </thead>
-      <tbody class="text-dark">
-        {% for order in order_list %}
-        <tr style="cursor:pointer;" onclick="location.href='/order/{{order.ordernum}}'">
-          <th>{{order.ordernum}}</th>
-          <th>{{order.fcuser}}</th>
-          <!-- <th>{{order.product}}</th>
-          <th>{{order.quantity|intcomma}} 개</th> -->
-          <!-- intcomma > humanize 활성화하고(settings파일도) 필터 등록-->
-          <th>{{order.register_date|date:'Y-m-d H:i'}}</th>
+      <tbody>
+        <tr>
+          <td><input class="form-control" type="checkbox"></td>
+          <td>주문 기간</td>
+          <td>
+            <div class="d-flex justify-content-center align-items-center">
+              <input type="text" class="form-control" placeholder="부터" style="width:48%;">
+              <div class="" style="width:4%;text-align:center;">~</div>
+              <input type="text" class="form-control" placeholder="까지" style="width:48%;">
+            </div>
+          </td>
         </tr>
-        {% endfor %}
+        <tr>
+          <td><input class="form-control" type="checkbox"></td>
+          <td>특정 일자</td>
+          <td>
+            <input type="text" class="form-control" placeholder="구분은 콤마로">
+          </td>
+        </tr>
+        <tr>
+          <td><input class="form-control" type="checkbox"></td>
+          <td>주문 총액 범위</td>
+          <td>
+            <div class="d-flex justify-content-center align-items-center">
+              <input type="text" class="form-control" placeholder="부터" style="width:48%;">
+              <div class="" style="width:4%;text-align:center;">~</div>
+              <input type="text" class="form-control" placeholder="까지" style="width:48%;">
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><input class="form-control" type="checkbox"></td>
+          <td>특정 제품</td>
+          <td>
+            <input type="text" class="form-control" placeholder="구분은 콤마로">
+          </td>
+        </tr>
+        <tr>
+          <td><input class="form-control" type="checkbox"></td>
+          <td>제품 개수</td>
+          <td>
+            <input type="text" class="form-control">
+          </td>
+        </tr>
+        <tr>
+          <td><input class="form-control" type="checkbox"></td>
+          <td>제품명</td>
+          <td>
+            <input type="text" class="form-control">
+          </td>
+        </tr>
+        <tr>
+          <td><input class="form-control" type="checkbox"></td>
+          <td>제품 가격</td>
+          <td>
+            <input type="text" class="form-control">
+          </td>
+        </tr>
+        <tr>
+          <td><input class="form-control" type="checkbox"></td>
+          <td>주문 내 제품 총 개수</td>
+          <td>
+            <input type="text" class="form-control">
+          </td>
+        </tr>
+        <tr>
+          <td><input class="form-control" type="checkbox"></td>
+          <td>email 도메인</td>
+          <td>
+            <input type="text" class="form-control">
+          </td>
+        </tr>
+        <tr>
+          <td><input class="form-control" type="checkbox"></td>
+          <td>가입 기간</td>
+          <td>
+            <div class="d-flex justify-content-center align-items-center">
+              <input type="text" class="form-control" placeholder="부터" style="width:48%;">
+              <div class="" style="width:4%;text-align:center;">~</div>
+              <input type="text" class="form-control" placeholder="까지" style="width:48%;">
+            </div>
+          </td>
+        </tr>
       </tbody>
     </table>
   </div>
 </div>
+<div class="row my-5">
+  <div class="col-12">
+    <table class="table table-light">
+      <thead class="thead-light">
+        <tr>
+          <th scope="col" onclick="Ordering('ordernum')">주문번호</th>
+          <th scope="col" onclick="Ordering('fcuser')">주문자</th>
+          <th scope="col" onclick="Ordering('register_date')">주문날짜</th>
+        </tr>
+      </thead>
+      <tbody class="text-dark tbody">
+      </tbody>
+    </table>
+    <div class="h-container" id = "pageDiv" style = "width : 100%; height : 5%;"></div>
+  </div>
+</div>
+{% for order in order_list %}
 <script>
+  order = {
+    "ordernum": '{{order.ordernum}}',
+    "fcuser": '{{order.fcuser}}',
+    "register_date": "{{order.register_date|date:'Y-m-d H:i'}}"
+  }
+  orderArr.push(order);
+</script>
+{% endfor %}
+<script>
+  const tbody = document.querySelector('.tbody');
+
   (function () {
-    document.querySelector('#orderList').classList.add('active')
+    document.querySelector('#orderList').classList.add('active');
+    orderListInit();
   })()
+
+  function orderListInit() {
+
+    const location = '/order/{{order.ordernum}}'
+    let str = '';
+    let index = 1;
+    filteredArr = orderArr.filter((n) => {
+      if (index >= firstRownum && index <= lastRownum) {
+        index++;
+        return n;
+      }
+      index++;
+    })
+
+    filteredArr.forEach((n) => {
+      const { ordernum, fcuser, register_date } = n;
+      str += '<tr style="cursor:pointer;" onclick="location.href=' + "'/order/" + ordernum + "'" + '">';
+      str += `
+            <th>${ordernum}</th>
+            <th>${fcuser}</th>
+            <th>${register_date}</th>
+          </tr>
+      `
+    })
+    tbody.innerHTML = str;
+    pagingInit();
+    selectOrderList();
+    
+  }
+
+
+  function Ordering(command) {
+    if (ordering == command) {
+      ordering = '-' + command;
+    } else {
+      ordering = command;
+    }
+    location.href = '.?ordering=' + ordering;
+  }
+  function clickPage(clickedPage)
+	{
+		page = clickedPage;
+    console.log(page);
+		pagingInit();
+    selectOrderList();
+	}
+	
+  function pagingInit()
+  {
+    totalCount = orderArr.length;
+    totalPage = parseInt(totalCount / listCount); // 총 페이지 수
+    if (totalCount % listCount > 0) {
+      totalPage = totalPage + 1;
+    }
+    console.log(totalPage.toString() + ' : totalPage');
+    if (totalPage < page) {
+      page = totalPage;
+    }
+    console.log(totalPage.toString() + ' : totalPage');
+    startPage = (parseInt((page - 1) / pageCount)) * pageCount + 1; // 시작페이지
+    console.log(startPage + ' : startPage');
+    endPage = startPage + pageCount - 1;
+    if (endPage > totalPage) {
+      endPage = totalPage;
+    }
+    console.log(endPage + ' : endPage');
+
+    if (page != totalPage) {
+      firstRownum = page * listCount - listCount + 1;
+      lastRownum = page * listCount
+    } else {
+      firstRownum = page * listCount - listCount + 1;
+      lastRownum = totalCount;
+    }
+
+    const location = '/order/{{order.ordernum}}'
+    let str = '';
+    let index = 1;
+
+    filteredArr = orderArr.filter((n) => {
+      if (index >= firstRownum && index <= lastRownum) {
+        index++;
+        return n;
+      }
+      index++;
+    })
+
+    filteredArr.forEach((n) => {
+      const { ordernum, fcuser, register_date } = n;
+      str += '<tr style="cursor:pointer;" onclick="location.href=' + "'/order/" + ordernum + "'" + '">';
+      str += `
+            <th>${ordernum}</th>
+            <th>${fcuser}</th>
+            <th>${register_date}</th>
+          </tr>
+      `
+    })
+    tbody.innerHTML = str;
+  }
+
+	function prePageCount()
+	{
+		if(startPage != 1)
+		{
+			if(endPage == totalPage && page != totalPage)
+			{
+				page = parseInt(page - pageCount) + parseInt(pageCount - (page % pageCount));
+			}
+			else
+			{
+				page = parseInt(endPage - pageCount);
+			}
+		}
+		pagingInit();
+    selectOrderList();
+	}
+	function nextPageCount()
+	{
+		if(endPage != totalPage)
+		{
+			page = parseInt(startPage + pageCount);
+		}
+		pagingInit();
+    selectOrderList();
+	}
+	function prePage()
+	{
+		if(page != 1)
+		{
+			--page;
+		}
+		pagingInit();
+    selectOrderList();
+	}
+	function nextPage()
+	{
+		if(page != totalPage)
+		{
+			++page;
+			firstRownum = firstRownum + listCount;
+			if(page == totalPage)
+			{
+				lastRownum = totalCount;
+			}
+			else
+			{
+				lastRownum = lastRownum + listCount;
+			}
+		}
+		pagingInit();
+    selectOrderList();
+	}
+	function firstPage()
+	{
+		if(page != 1)
+		{
+			page = 1;
+		}
+		pagingInit();
+    selectOrderList();
+	}
+	function lastPage()
+	{
+		if(page != totalPage)
+		{
+			page = totalPage;
+		}
+		pagingInit();
+    selectOrderList();
+	}
+  function selectOrderList()
+  {
+    let pageSql = '';
+    pageSql += '<div class = "item" style = "width : ' + (100 / (6 + pageCount)) + '%; height : 100%; display:table;">';
+    if (page != 1) {
+      
+      pageSql += '<div class = "tableCell clickAble" onclick = "firstPage()">';
+      pageSql += '&lt;&lt;&lt;</div></div>';
+    } else {
+      pageSql += '<div class = "tableCell">';
+      pageSql += '　</div></div>';
+    }
+    pageSql += '<div class = "item" style = "width : ' + (100 / (6 + pageCount)) + '%; height : 100%; display:table;">';
+    if (startPage != 1) {
+      pageSql += '<div class = "tableCell clickAble" onclick = "prePageCount()">';
+      pageSql += '&lt;&lt;</div></div>';
+    } else {
+      pageSql += '<div class = "tableCell">';
+      pageSql += '　</div></div>';
+    }
+    pageSql += '<div class = "item" style = "width : ' + (100 / (6 + pageCount)) + '%; height : 100%; display:table;">';
+    if (page != 1) {
+      pageSql += '<div class = "tableCell clickAble" onclick = "prePage()">';
+      pageSql += '&lt;</div></div>';
+    } else {
+      pageSql += '<div class = "tableCell">';
+      pageSql += '　</div></div>';
+    }
+
+
+    let check = startPage;
+    for (let i = 0; i < pageCount; ++i) {
+      pageSql += '<div class = "item" style = "width : ' + (100 / (6 + pageCount)) +
+        '%; height : 100%; display : table">';
+      if (check <= endPage) {
+        if (startPage + i == page) {
+          pageSql += '<div class = "clickAble clickedPage" id = "firstPageDiv" onclick = "clickPage(' + (startPage +
+            i) + ')" style = "display : table-cell; text-align : center; vertical-align : middle;">';
+          pageSql += (startPage + i) + '</div></div>';
+        } else {
+          pageSql += '<div class = "clickAble" onclick = "clickPage(' + (startPage + i) +
+            ')" style = "display : table-cell; text-align : center; vertical-align : middle;">';
+          pageSql += (startPage + i) + '</div></div>';
+        }
+      } else {
+        pageSql += '<div style = "display : table-cell; text-align : center; vertical-align : middle;">';
+        pageSql += '　</div></div>';
+      }
+      ++check;
+    }
+
+    pageSql += '<div class = "item" style = "width : ' + (100 / (6 + pageCount)) +
+    '%; height : 100%; display : table">';
+    if (page != totalPage) {
+      pageSql +=
+        '<div class = "clickAble" onclick = "nextPage()" style = "display : table-cell; text-align : center; vertical-align : middle;">';
+      pageSql += '></div></div>';
+    } else {
+      pageSql += '<div style = "display : table-cell; text-align : center; vertical-align : middle;">';
+      pageSql += '　</div></div>';
+    }
+
+    pageSql += '<div class = "item" style = "width : ' + (100 / (6 + pageCount)) +
+    '%; height : 100%; display : table">';
+    if (endPage != totalPage) {
+      pageSql +=
+        '<div class = "clickAble" onclick = "nextPageCount()" style = "display : table-cell; text-align : center; vertical-align : middle;">';
+      pageSql += '>></div></div>';
+    } else {
+      pageSql += '<div style = "display : table-cell; text-align : center; vertical-align : middle;">';
+      pageSql += '　</div></div>';
+    }
+    pageSql += '<div class = "item" style = "width : ' + (100 / (6 + pageCount)) +
+    '%; height : 100%; display : table">';
+    if (page != totalPage) {
+      pageSql +=
+        '<div class = "clickAble" onclick = "lastPage()" style = "display : table-cell; text-align : center; vertical-align : middle;">';
+      pageSql += '>>></div></div>';
+    } else {
+      pageSql += '<div style = "display : table-cell; text-align : center; vertical-align : middle;">';
+      pageSql += '　</div></div>';
+    }
+    console.log('33');
+    console.log(pageSql);
+    document.getElementById("pageDiv").innerHTML = pageSql;
+  }
 </script>
 {% endblock %}

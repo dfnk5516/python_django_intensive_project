@@ -45,17 +45,23 @@ class OrderCreate(FormView):
     return kw
 '''
 
-@method_decorator(login_required, name='dispatch')
-class OrderList(ListView):
-  # model = Order # 자신이 주문한것만 보이게 하기위해 filter 적용(하단의 get_queryset > session 접근하기위해 사용하는 함수)
-  template_name = 'order.html'
-  context_object_name = 'order_list' # attribute name 설정 > 안할시 object_list
+# @method_decorator(login_required, name='dispatch')
+# class OrderList(ListView):
+#   # model = Order # 자신이 주문한것만 보이게 하기위해 filter 적용(하단의 get_queryset > session 접근하기위해 사용하는 함수)
+#   template_name = 'order.html'
+#   context_object_name = 'order_list' # attribute name 설정 > 안할시 object_list
 
-  def get_queryset(self, **kwargs):
-    queryset = Order.objects.all()
-    print(queryset)
-    # queryset = Order.objects.filter(fcuser__email=self.request.session.get('user'))
-    return queryset
+#   def get_queryset(self, **kwargs):
+#     queryset = Order.objects.all()
+#     print(queryset)
+#     # queryset = Order.objects.filter(fcuser__email=self.request.session.get('user'))
+#     return queryset
+
+def OrderList(request):
+  if request.method == 'GET':
+    ordering = request.GET.get('ordering', 'ordernum')
+    queryset = Order.objects.all().order_by(ordering)
+    return render(request, 'order.html', {'order_list' : queryset, 'ordering' : ordering})
 
 # @method_decorator(login_required, name='dispatch')
 # class OrderDetail(ListView):
