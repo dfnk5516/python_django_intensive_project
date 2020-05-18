@@ -49,7 +49,6 @@
         tr.appendChild(td); // quantity
         td = document.createElement('td');
         let input = document.createElement('input');
-        console.log(key);
         input.setAttribute('id', key);
         input.setAttribute('type', 'text');
         input.classList.add('form-control');
@@ -83,7 +82,7 @@
     cart = getCookie('cart');
     if (cart != undefined && cart != null) {
       const obj = document.querySelector('#' + item);
-      if (isNaN(obj.value)) {alert('숫자만 입력하시오'); return}
+      //if (isNaN(obj.value)) {alert('숫자만 입력하시오'); return}
       cart = JSON.parse(cart);
       cart[item] = obj.value;
       setCookie('cart', JSON.stringify(cart), 3)
@@ -114,7 +113,17 @@
 
       let temp ='';
       for (let key in cart) {
-        let value = cart[key];
+        let value = parseInt(cart[key]);
+        if(isNaN(value))
+        {
+          alert('주문수량에는 숫자만 적으시오.');
+          return;
+        }
+        if(value.trim == '' || value < 0)
+        {
+          alert('주문수량을 최소 0개 이상 입력하시오.');
+          return;
+        }
         let product = document.createElement('input');
         product.name = key;
         temp += key + '%&key%&';
@@ -127,11 +136,9 @@
       orderProductList.type= 'hidden'
       orderProductList.value = temp;
       form.appendChild(orderProductList);
-      // setCookie('cart', '', 0)
       document.querySelector('body').appendChild(form);
       form.submit();
     }
-
   }
 
   function setCookie(cookie_name, value, days) {

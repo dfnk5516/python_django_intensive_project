@@ -1,0 +1,19 @@
+<script>
+  if('{{error}}' != '')
+  {
+    alert('{{error}}');
+    location.href = '/cart';
+  }
+  else
+  {
+    setCookie('cart','', 0);
+    alert('장바구니에 담았습니다.');
+    location.href = '/order';
+  }
+  function setCookie(cookie_name, value, days) {
+    var exdate = new Date();
+    exdate.setDate(exdate.getDate() + days);
+    var cookie_value = escape(value) + ((days == null) ? '' : ';    expires=' + exdate.toUTCString()) + ';path=/;';
+    document.cookie = cookie_name + '=' + cookie_value;
+  }
+</script>

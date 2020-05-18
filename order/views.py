@@ -102,8 +102,9 @@ def orderCreate(request):
         quantity = request.POST.get(v,0)
         if (prod.stock <= int(quantity)):
           check = False
-      
-      if check == True:
+
+      res_data = {}
+      if check:
         order = Order(
           fcuser = Fcuser.objects.get(email=request.session.get('user'))
         )
@@ -120,6 +121,7 @@ def orderCreate(request):
           orderitem.save()
           prod.stock -= int(quantity)
           prod.save()
-
-    return redirect('/')
+      else:
+        res_data['error'] = '주문 수량이 재고 수량을 초과합니다.'
+  return render(request, 'redirect.html', res_data)
 
