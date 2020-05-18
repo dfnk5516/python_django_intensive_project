@@ -117,70 +117,6 @@
             <input type="text" class="form-control dateFormat">
           </td>
         </tr>
-        <tr>
-          <td><input class="form-control" type="checkbox"></td>
-          <td>주문 총액 범위</td>
-          <td>
-            <div class="d-flex justify-content-center align-items-center">
-              <input type="text" class="form-control" placeholder="부터" style="width:48%;">
-              <div class="" style="width:4%;text-align:center;">~</div>
-              <input type="text" class="form-control" placeholder="까지" style="width:48%;">
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><input class="form-control" type="checkbox"></td>
-          <td>특정 제품</td>
-          <td>
-            <input type="text" class="form-control" placeholder="구분은 콤마로">
-          </td>
-        </tr>
-        <tr>
-          <td><input class="form-control" type="checkbox"></td>
-          <td>제품 개수</td>
-          <td>
-            <input type="text" class="form-control">
-          </td>
-        </tr>
-        <tr>
-          <td><input class="form-control" type="checkbox"></td>
-          <td>제품명</td>
-          <td>
-            <input type="text" class="form-control">
-          </td>
-        </tr>
-        <tr>
-          <td><input class="form-control" type="checkbox"></td>
-          <td>제품 가격</td>
-          <td>
-            <input type="text" class="form-control">
-          </td>
-        </tr>
-        <tr>
-          <td><input class="form-control" type="checkbox"></td>
-          <td>주문 내 제품 총 개수</td>
-          <td>
-            <input type="text" class="form-control">
-          </td>
-        </tr>
-        <tr>
-          <td><input class="form-control" type="checkbox"></td>
-          <td>email 도메인</td>
-          <td>
-            <input type="text" class="form-control">
-          </td>
-        </tr>
-        <tr>
-          <td><input class="form-control" type="checkbox"></td>
-          <td>가입 기간</td>
-          <td>
-            <div class="d-flex justify-content-center align-items-center">
-              <input type="text" class="form-control dateFormat defaultYesterday" placeholder="부터" style="width:48%;">
-              <div class="" style="width:4%;text-align:center;">~</div>
-              <input type="text" class="form-control dateFormat defaultToday" placeholder="까지" style="width:48%;">
-            </div>
-          </td>
-        </tr>
       </tbody>
     </table>
     <button class="btn btn-primary" onclick="filter()">필터 적용</button>
@@ -207,7 +143,8 @@
   order = {
     "ordernum": '{{order.ordernum}}',
     "fcuser": '{{order.fcuser}}',
-    "register_date": "{{order.register_date|date:'Y-m-d H:i'}}"
+    "register_date": "{{order.register_date|date:'Y-m-d H:i'}}",
+    "order" : "{{order.order}}",
   }
   orderArr.push(order);
 </script>
@@ -217,6 +154,7 @@
   const checkBoxes = document.querySelectorAll('.filter-table-tbody input[type="checkbox"]');
   const defaultYesterday = document.querySelectorAll('.defaultYesterday');
   const defaultToday = document.querySelectorAll('.defaultToday');
+  const specificDate = document.querySelector('.filter-table-tbody > tr:nth-child(2)>td:nth-child(3) input');
   let yesterday = new Date();
   let today = new Date();
 
@@ -236,6 +174,7 @@
     
     defaultYesterday.forEach((n)=>n.value = yesterday.format('yyyy-MM-dd 00:00'));
     defaultToday.forEach((n)=>n.value = today.format('yyyy-MM-dd hh:00'));
+    specificDate.value = today.format('yyyy-MM-dd hh:00');
 
     orderListInit();
     pagingInit();
@@ -264,7 +203,7 @@
 	
   function pagingInit()
   {
-    totalCount = orderArr.length;
+    totalCount = filteredArr.length;
     totalPage = parseInt(totalCount / listCount); // 총 페이지 수
     if (totalCount % listCount > 0) {
       totalPage = totalPage + 1;
@@ -470,9 +409,35 @@
   }
   function filter()
   {
+    orderListInit();
+    let check = true;
     for(let i =0; i < checkBoxes.length; ++i){
-      if(checkBoxes[i].checked) console.log(checkValid(i));
+      if(checkBoxes[i].checked)
+      {
+        if(!checkValid(i)){
+          check = false;
+          break;
+        }
+      }
     }
+    if (!check) return;
+
+    for(let i =0; i < checkBoxes.length; ++i){
+      if(checkBoxes[i].checked)
+      {
+        switch(i)
+        {
+          case 0:
+            filteredArr = dateFilter(filteredArr, 0);
+          break;
+          case 1:
+            filteredArr = dateFilter(filteredArr, 2);
+          break;
+        }
+      }
+    }
+    pagingInit();
+    selectOrderList();
   }
   function checkValid(index){
     const inputs = document.querySelectorAll('.filter-table-tbody > tr:nth-child('+(index + 1)+')>td:nth-child(3) input');
@@ -481,30 +446,16 @@
     {
       case 0: // check dateTime
       case 1:
-      case 9:
+      case 3:
           for(let i =0; i < inputs.length; ++i)
           {
-            if(trim(inputs[i].value) == '') break;
+            if(inputs[i].value.trim == '') break;
             if(!isDatetime(inputs[i].value))
             {
               alert('필터 조건에 알맞은 형식을 채우시오. 기간 형식 에러');
               check = false;
             }
           }
-      break;
-      case 2: // check isNaN
-      case 4:
-      case 6:
-      case 7:
-        for(let i =0; i <inputs.length; ++i)
-        {
-          if(isNaN(inputs[i].value))
-          {
-            if(trim(inputs[i].value) == '') break;
-            alert('필터 조건에 알맞은 형식을 채우시오. 숫자 형식 에러');
-            check = false;
-          }
-        }
       break;
     }
     return check;
@@ -516,5 +467,61 @@
     return re.test(d);
   }
   
+  function dateFilter(obj, num){
+    if (num == 2)
+    {
+      let temp = specificDate.value.split(' ');
+      temp = new Date(temp[0]);
+      let newArr = new Array();
+      for(let i = 0; i < obj.length; ++i)
+      {
+          let obj_date = new Date(obj[i].register_date.split(' ')[0]);
+          if (obj_date - temp == 0)
+          {
+            newArr.push(obj[i]);
+          }
+      }
+      return newArr;
+    }
+    else
+    {
+      const firstOrderDttm = orderArr[0].register_date;
+      const endOrderDttm = orderArr[orderArr.length - 1].register_date;
+      let startVal = defaultYesterday[num].value;
+      let endVal =defaultToday[num].value;
+
+      if(startVal.trim == '') startVal = firstOrderDttm;
+      if(endVal.trim == '') endVal = endOrderDttm;
+
+      startVal = new Date(startVal + ':00');
+      endVal = new Date(endVal + ':00');
+
+      let newArr = new Array();
+      for(let i = 0; i < obj.length; ++i)
+      {
+          let obj_date = new Date(obj[i].register_date + ':00');
+          if (obj_date - startVal >= 0 && obj_date - endVal <= 0)
+          {
+            newArr.push(obj[i]);
+          }
+      }
+      return newArr;
+    }
+  }
+  function nameFilter(obj)
+  {
+    const nameValue = document.querySelector('.filter-table-tbody> tr:nth-child(3) > td:nth-child(3) input');
+    console.log(nameValue);
+    let newArr = new Array();
+    for(let i = 0; i < obj.length; ++i)
+    {
+        let obj_name = obj[i].product;
+        if (obj_name.includes(nameValue))
+        {
+          newArr.push(obj[i]);
+        }
+    }
+    return newArr;
+  }
 </script>
 {% endblock %}
