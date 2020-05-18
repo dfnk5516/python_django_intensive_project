@@ -1,6 +1,9 @@
 {% extends "base.html" %}
 {% load humanize %}
 {% block header%}
+<link rel="stylesheet" href="/static/css/jquery.datetimepicker.min.css">
+<script src="/static/js/jquery.datetimepicker.full.min.js"></script>
+
 <script>
   const orderArr = new Array();
   let order;
@@ -16,6 +19,33 @@
   let endPage; // 10 20 30 40...
   let firstRownum = 1;
   let lastRownum = 10;
+
+  Date.prototype.format = function(f) {
+    if (!this.valueOf()) return " ";
+ 
+    var weekName = ["일요일", "월요일", "화요일", "수요일", "목요일", "금요일", "토요일"];
+    var d = this;
+     
+    return f.replace(/(yyyy|yy|MM|dd|E|hh|mm|ss|a\/p)/gi, function($1) {
+        switch ($1) {
+            case "yyyy": return d.getFullYear();
+            case "yy": return (d.getFullYear() % 1000).zf(2);
+            case "MM": return (d.getMonth() + 1).zf(2);
+            case "dd": return d.getDate().zf(2);
+            case "E": return weekName[d.getDay()];
+            case "HH": return d.getHours().zf(2);
+            //case "hh": return ((h = d.getHours() % 12) ? h : 12).zf(2);
+            case "hh": return d.getHours().zf(2);
+            case "mm": return d.getMinutes().zf(2);
+            case "ss": return d.getSeconds().zf(2);
+            case "a/p": return d.getHours() < 12 ? "오전" : "오후";
+            default: return $1;
+        }
+    });
+  };
+  String.prototype.string = function(len){var s = '', i = 0; while (i++ < len) { s += this; } return s;};
+  String.prototype.zf = function(len){return "0".string(len - this.length) + this;};
+  Number.prototype.zf = function(len){return this.toString().zf(len);};
 </script>
 <style>
   .tbody tr:hover {
@@ -23,7 +53,7 @@
     color: white;
   }
 
-  .thead-light tr th:hover {
+  .orderThead.thead-light tr th:hover {
     cursor: pointer;
     background: #263238;
     color: white;
@@ -60,7 +90,7 @@
 {% block contents %}
 <div class="row mt-5">
   <div class="col-12">
-    <table class="table table-light">
+    <table class="table table-light filter-table">
       <thead class="thead-light">
         <tr>
           <th scope='col'>활성</th>
@@ -68,15 +98,15 @@
           <th>필터 조건</th>
         </tr>
       </thead>
-      <tbody>
+      <tbody class="filter-table-tbody">
         <tr>
           <td><input class="form-control" type="checkbox"></td>
           <td>주문 기간</td>
           <td>
             <div class="d-flex justify-content-center align-items-center">
-              <input type="text" class="form-control" placeholder="부터" style="width:48%;">
+              <input type="text" class="form-control dateFormat defaultYesterday" placeholder="부터" style="width:48%;">
               <div class="" style="width:4%;text-align:center;">~</div>
-              <input type="text" class="form-control" placeholder="까지" style="width:48%;">
+              <input type="text" class="form-control dateFormat defaultToday" placeholder="까지" style="width:48%;">
             </div>
           </td>
         </tr>
@@ -84,7 +114,7 @@
           <td><input class="form-control" type="checkbox"></td>
           <td>특정 일자</td>
           <td>
-            <input type="text" class="form-control" placeholder="구분은 콤마로">
+            <input type="text" class="form-control dateFormat">
           </td>
         </tr>
         <tr>
@@ -145,20 +175,21 @@
           <td>가입 기간</td>
           <td>
             <div class="d-flex justify-content-center align-items-center">
-              <input type="text" class="form-control" placeholder="부터" style="width:48%;">
+              <input type="text" class="form-control dateFormat defaultYesterday" placeholder="부터" style="width:48%;">
               <div class="" style="width:4%;text-align:center;">~</div>
-              <input type="text" class="form-control" placeholder="까지" style="width:48%;">
+              <input type="text" class="form-control dateFormat defaultToday" placeholder="까지" style="width:48%;">
             </div>
           </td>
         </tr>
       </tbody>
     </table>
+    <button class="btn btn-primary" onclick="filter()">필터 적용</button>
   </div>
 </div>
 <div class="row my-5">
   <div class="col-12">
     <table class="table table-light">
-      <thead class="thead-light">
+      <thead class="thead-light orderThead">
         <tr>
           <th scope="col" onclick="Ordering('ordernum')">주문번호</th>
           <th scope="col" onclick="Ordering('fcuser')">주문자</th>
@@ -183,39 +214,36 @@
 {% endfor %}
 <script>
   const tbody = document.querySelector('.tbody');
+  const checkBoxes = document.querySelectorAll('.filter-table-tbody input[type="checkbox"]');
+  const defaultYesterday = document.querySelectorAll('.defaultYesterday');
+  const defaultToday = document.querySelectorAll('.defaultToday');
+  let yesterday = new Date();
+  let today = new Date();
 
   (function () {
     document.querySelector('#orderList').classList.add('active');
+
+    $('.dateFormat').datetimepicker({
+      formatTime : 'H:i',
+      format : 'Y-m-d H:i',
+      formatDate : 'Y-m-d',
+      defaultTime : '00:00',
+      timepickerScrollbar : false
+    });
+
+    
+    yesterday.setDate(yesterday.getDate() -1 );
+    
+    defaultYesterday.forEach((n)=>n.value = yesterday.format('yyyy-MM-dd 00:00'));
+    defaultToday.forEach((n)=>n.value = today.format('yyyy-MM-dd hh:00'));
+
     orderListInit();
+    pagingInit();
+    selectOrderList();
   })()
 
   function orderListInit() {
-
-    const location = '/order/{{order.ordernum}}'
-    let str = '';
-    let index = 1;
-    filteredArr = orderArr.filter((n) => {
-      if (index >= firstRownum && index <= lastRownum) {
-        index++;
-        return n;
-      }
-      index++;
-    })
-
-    filteredArr.forEach((n) => {
-      const { ordernum, fcuser, register_date } = n;
-      str += '<tr style="cursor:pointer;" onclick="location.href=' + "'/order/" + ordernum + "'" + '">';
-      str += `
-            <th>${ordernum}</th>
-            <th>${fcuser}</th>
-            <th>${register_date}</th>
-          </tr>
-      `
-    })
-    tbody.innerHTML = str;
-    pagingInit();
-    selectOrderList();
-    
+    filteredArr = orderArr;
   }
 
 
@@ -230,7 +258,6 @@
   function clickPage(clickedPage)
 	{
 		page = clickedPage;
-    console.log(page);
 		pagingInit();
     selectOrderList();
 	}
@@ -242,18 +269,18 @@
     if (totalCount % listCount > 0) {
       totalPage = totalPage + 1;
     }
-    console.log(totalPage.toString() + ' : totalPage');
+    // console.log(totalPage.toString() + ' : totalPage');
     if (totalPage < page) {
       page = totalPage;
     }
-    console.log(totalPage.toString() + ' : totalPage');
+    // console.log(totalPage.toString() + ' : totalPage');
     startPage = (parseInt((page - 1) / pageCount)) * pageCount + 1; // 시작페이지
-    console.log(startPage + ' : startPage');
+    // console.log(startPage + ' : startPage');
     endPage = startPage + pageCount - 1;
     if (endPage > totalPage) {
       endPage = totalPage;
     }
-    console.log(endPage + ' : endPage');
+    // console.log(endPage + ' : endPage');
 
     if (page != totalPage) {
       firstRownum = page * listCount - listCount + 1;
@@ -266,8 +293,7 @@
     const location = '/order/{{order.ordernum}}'
     let str = '';
     let index = 1;
-
-    filteredArr = orderArr.filter((n) => {
+    let pagingArr = filteredArr.filter((n) => {
       if (index >= firstRownum && index <= lastRownum) {
         index++;
         return n;
@@ -275,7 +301,7 @@
       index++;
     })
 
-    filteredArr.forEach((n) => {
+    pagingArr.forEach((n) => {
       const { ordernum, fcuser, register_date } = n;
       str += '<tr style="cursor:pointer;" onclick="location.href=' + "'/order/" + ordernum + "'" + '">';
       str += `
@@ -440,9 +466,55 @@
       pageSql += '<div style = "display : table-cell; text-align : center; vertical-align : middle;">';
       pageSql += '　</div></div>';
     }
-    console.log('33');
-    console.log(pageSql);
-    document.getElementById("pageDiv").innerHTML = pageSql;
+    document.querySelector("#pageDiv").innerHTML = pageSql;
   }
+  function filter()
+  {
+    for(let i =0; i < checkBoxes.length; ++i){
+      if(checkBoxes[i].checked) console.log(checkValid(i));
+    }
+  }
+  function checkValid(index){
+    const inputs = document.querySelectorAll('.filter-table-tbody > tr:nth-child('+(index + 1)+')>td:nth-child(3) input');
+    let check = true;
+    switch(index)
+    {
+      case 0: // check dateTime
+      case 1:
+      case 9:
+          for(let i =0; i < inputs.length; ++i)
+          {
+            if(trim(inputs[i].value) == '') break;
+            if(!isDatetime(inputs[i].value))
+            {
+              alert('필터 조건에 알맞은 형식을 채우시오. 기간 형식 에러');
+              check = false;
+            }
+          }
+      break;
+      case 2: // check isNaN
+      case 4:
+      case 6:
+      case 7:
+        for(let i =0; i <inputs.length; ++i)
+        {
+          if(isNaN(inputs[i].value))
+          {
+            if(trim(inputs[i].value) == '') break;
+            alert('필터 조건에 알맞은 형식을 채우시오. 숫자 형식 에러');
+            check = false;
+          }
+        }
+      break;
+    }
+    return check;
+  }
+
+  function isDatetime(d)
+  {
+    let re = /[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1]) (0[0-9]|1[0-9]|2[0-3]):(0[0-9]|1[0-9]|2[0-9]|3[0-9]|4[0-9]|5[0-9])/;
+    return re.test(d);
+  }
+  
 </script>
 {% endblock %}
